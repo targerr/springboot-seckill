@@ -22,12 +22,13 @@ public class SeckillController {
     @RequestMapping("/seckill")
     public ResultVo sekill(@RequestParam(value = "psid", required = true) Long psid,
                            @RequestParam(value = "userid", required = true) String userId) {
-        try {
-            promotionSeckillService.processSeckill(psid, userId, 1);
-            return ResultVoUtil.success("下单成功!");
-        } catch (Exception e) {
-         //   e.printStackTrace();
-            return ResultVoUtil.error(e.getMessage(), 500);
-        }
+        // 注释 try catch 使用handler全局拦截异常
+//        try {
+        promotionSeckillService.processSeckill(psid, userId, 1);
+        return ResultVoUtil.success("下单成功!");
+//        } catch (Exception e) {
+//         //   e.printStackTrace();
+//            return ResultVoUtil.error(e.getMessage(), 500);
+//        }
     }
 }

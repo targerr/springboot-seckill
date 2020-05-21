@@ -1,15 +1,22 @@
 package com.wanggs.springbootseckill.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.wanggs.springbootseckill.enums.ResultEnum;
 import com.wanggs.springbootseckill.enums.SeckillEnum;
 import com.wanggs.springbootseckill.exception.SeckillException;
 import com.wanggs.springbootseckill.mapper.PromotionSeckillMapper;
 import com.wanggs.springbootseckill.pojo.PromotionSeckill;
 import com.wanggs.springbootseckill.service.PromotionSeckillService;
+import com.wanggs.springbootseckill.util.RandomUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Wgs
@@ -23,6 +30,8 @@ public class PromotionSeckillServiceImpl implements PromotionSeckillService {
     private PromotionSeckillMapper promotionSeckillMapper;
     @Autowired
     private RedisTemplate redisTemplate;
+    @Resource // rabbitMq客户端
+    private RabbitTemplate rabbitTemplate;
 
     @Override
     public void processSeckill(Long psId, String userId, Integer num) {
@@ -57,6 +66,21 @@ public class PromotionSeckillServiceImpl implements PromotionSeckillService {
             // 领取
             redisTemplate.opsForSet().add("seckill:users:" + promotionSeckill.getPsId(), userId);
             log.info("【秒杀活动】恭喜领取成功!");
+            // mq异步消峰解耦
+            sendOrderToQuery(userId);
+            log.info("【MQ】 创建订单");
         }
+    }
+
+    // 订单信息推送队列
+    public String sendOrderToQuery(String userId) {
+        String orderNo = RandomUtil.createOrderNo();
+        JSONObject data = new JSONObject();
+        data.put("userId", userId);
+        data.put("orderNo", orderNo);
+
+        //附加额外的订单信息
+        rabbitTemplate.convertAndSend("exchange-order", null, data);
+        return orderNo;
     }
 }

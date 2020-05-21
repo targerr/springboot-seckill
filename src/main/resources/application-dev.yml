@@ -18,6 +18,12 @@ spring:
     username: guest
     password: guest
     virtual-host: /
+    listener:
+      simple:
+        #定义消费者做多同时处理10个消息
+        prefetch: 10
+        #消息手动确认
+        acknowledge-mode: manual
 
 mybatis:
   mapper-locations: classpath:/mapper/*.xml
